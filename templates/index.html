@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Royal AI Image Classifier</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+      background:
+        radial-gradient(ellipse at top, #ff6b6b 0%, transparent 70%),
+        radial-gradient(ellipse at bottom left, #4ecdc4 0%, transparent 70%),
+        radial-gradient(ellipse at bottom right, #45b7d1 0%, transparent 70%),
+        radial-gradient(ellipse at top right, #f093fb 0%, transparent 70%),
+        linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+      overflow-x: hidden;
+      animation: gradient-shift 20s ease infinite;
+    }
+
+    @keyframes gradient-shift {
+      0%, 100% { filter: hue-rotate(0deg) saturate(1) brightness(1); }
+      25% { filter: hue-rotate(30deg) saturate(1.05) brightness(1.02); }
+      50% { filter: hue-rotate(60deg) saturate(1.1) brightness(1.05); }
+      75% { filter: hue-rotate(90deg) saturate(1.05) brightness(1.02); }
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255, 107, 107, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(78, 205, 196, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 60% 40%, rgba(240, 147, 251, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 40% 80%, rgba(79, 172, 254, 0.12) 0%, transparent 50%);
+      pointer-events: none;
+      animation: subtle-float 25s ease-in-out infinite;
+    }
+
+    @keyframes subtle-float {
+      0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.8; }
+      25% { transform: translate(10px, -15px) scale(1.02); opacity: 0.9; }
+      50% { transform: translate(-8px, 12px) scale(0.98); opacity: 0.85; }
+      75% { transform: translate(12px, -8px) scale(1.01); opacity: 0.88; }
+    }
+
+    .container {
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.15) 25%, rgba(255, 255, 255, 0.25) 50%, rgba(255, 255, 255, 0.15) 75%, rgba(255, 255, 255, 0.25) 100%);
+      backdrop-filter: blur(25px) saturate(1.8);
+      border-radius: 40px;
+      max-width: 750px;
+      width: 100%;
+      padding: 60px 50px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      position: relative;
+      z-index: 1;
+      overflow: hidden;
+      box-shadow: 
+        0 25px 50px rgba(0, 0, 0, 0.15),
+        0 15px 35px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    }
+
+    .container::before {
+      content: '';
+      position: absolute;
+      top: -3px;
+      left: -3px;
+      right: -3px;
+      bottom: -3px;
+      background: linear-gradient(135deg, 
+        rgba(255, 107, 107, 0.8) 0%, 
+        rgba(78, 205, 196, 0.8) 20%, 
+        rgba(69, 183, 209, 0.8) 40%, 
+        rgba(240, 147, 251, 0.8) 60%, 
+        rgba(150, 206, 180, 0.8) 80%, 
+        rgba(255, 107, 107, 0.8) 100%);
+      border-radius: 43px;
+      z-index: -1;
+      animation: elegant-glow 8s ease-in-out infinite;
+    }
+
+    @keyframes elegant-glow {
+      0%, 100% { 
+        opacity: 0.6; 
+        transform: scale(1); 
+        filter: blur(1px);
+      }
+      25% { 
+        opacity: 0.8; 
+        transform: scale(1.02); 
+        filter: blur(2px);
+      }
+      50% { 
+        opacity: 0.7; 
+        transform: scale(1.01); 
+        filter: blur(1.5px);
+      }
+      75% { 
+        opacity: 0.85; 
+        transform: scale(1.015); 
+        filter: blur(2.5px);
+      }
+    }
+
+    .container::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(45deg, 
+        transparent 0%, 
+        rgba(255, 255, 255, 0.1) 20%, 
+        transparent 40%, 
+        rgba(255, 255, 255, 0.08) 60%, 
+        transparent 80%, 
+        rgba(255, 255, 255, 0.12) 100%);
+      border-radius: 37px;
+      animation: shimmer-overlay 6s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    @keyframes shimmer-overlay {
+      0%, 100% { opacity: 0.3; transform: translateX(-100%); }
+      50% { opacity: 0.8; transform: translateX(100%); }
+    }
+
+    h1 {
+      text-align: center;
+      font-family: 'Playfair Display', serif;
+      color: #1a1a2e;
+      font-size: 3.5rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #2d3748, #4a5568, #1a202c, #2b6cb0, #3182ce, #4299e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+      letter-spacing: -0.5px;
+      position: relative;
+      animation: sophisticated-glow 4s ease-in-out infinite alternate;
+    }
+
+    @keyframes sophisticated-glow {
+      0% { filter: drop-shadow(0 0 8px rgba(45, 55, 72, 0.4)); }
+      50% { filter: drop-shadow(0 0 16px rgba(66, 153, 225, 0.6)); }
+      100% { filter: drop-shadow(0 0 12px rgba(49, 130, 206, 0.5)); }
+    }
+
+    h1::after {
+      content: '';
+      position: absolute;
+      bottom: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 4px;
+      background: linear-gradient(90deg, #2d3748, #4a5568, #2b6cb0, #3182ce);
+      border-radius: 2px;
+      animation: refined-underline 3s ease-in-out infinite;
+    }
+
+    @keyframes refined-underline {
+      0%, 100% { transform: translateX(-50%) scaleX(1); opacity: 0.8; }
+      50% { transform: translateX(-50%) scaleX(1.1); opacity: 1; }
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #4a5568;
+      font-size: 1.2rem;
+      margin-bottom: 50px;
+      font-weight: 500;
+    }
+
+    .upload-container {
+      border: 4px dashed rgba(255, 255, 255, 0.6);
+      border-radius: 30px;
+      padding: 60px 40px;
+      text-align: center;
+      margin-bottom: 50px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0.2) 100%);
+      transition: all 0.4s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .upload-text {
+      font-size: 1.3rem;
+      color: #2d3748;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+
+    .upload-subtext {
+      color: #4a5568;
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    .upload-btn {
+      background: linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1, #f093fb);
+      color: white;
+      border: none;
+      padding: 18px 36px;
+      border-radius: 20px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 30px;
+      letter-spacing: 1.5px;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .upload-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 25px rgba(0, 0, 0, 0.25);
+    }
+
+    #preview {
+      max-width: 100%;
+      max-height: 350px;
+      border-radius: 16px;
+      display: none;
+      margin: 30px auto;
+      border: 3px solid transparent;
+      background: linear-gradient(white, white) padding-box,
+                 linear-gradient(45deg, #ffd700, #8a2be2) border-box;
+    }
+
+    #result {
+      margin-top: 40px;
+      padding: 30px;
+      border-radius: 20px;
+      font-size: 1.1rem;
+      line-height: 1.8;
+      display: none;
+    }
+
+    .success {
+      background: #f0fff4;
+      color: #2f855a;
+      border: 2px solid #9ae6b4;
+    }
+
+    .error {
+      background: #fff5f5;
+      color: #c53030;
+      border: 2px solid #feb2b2;
+    }
+
+    .loading {
+      background: #ebf8ff;
+      color: #3182ce;
+      border: 2px solid #bee3f8;
+    }
+
+    .object-name {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 15px;
+    }
+
+    .result-image {
+      max-width: 350px;
+      margin-top: 20px;
+      border-radius: 12px;
+      border: 2px solid transparent;
+      background: linear-gradient(white, white) padding-box,
+                 linear-gradient(45deg, #ffd700, #8a2be2) border-box;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Object Identifier</h1>
+    <p class="subtitle">Discover what's in your image with stunning AI precision</p>
+
+    <div class="upload-container" id="uploadContainer">
+      <div class="upload-text">Drop your stunning image here or click to browse</div>
+      <div class="upload-subtext">Supports JPG, PNG, GIF, WebP up to 16MB</div>
+      <input type="file" id="fileInput" accept="image/*" required>
+      <button type="button" class="upload-btn" id="submitBtn">Choose Image</button>
+    </div>
+
+    <img id="preview" alt="Preview">
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const preview = document.getElementById('preview');
+    const resultDiv = document.getElementById('result');
+    const submitBtn = document.getElementById('submitBtn');
+    const uploadContainer = document.getElementById('uploadContainer');
+
+    uploadContainer.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    uploadContainer.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadContainer.classList.add('dragover');
+    });
+
+    uploadContainer.addEventListener('dragleave', () => {
+      uploadContainer.classList.remove('dragover');
+    });
+
+    uploadContainer.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadContainer.classList.remove('dragover');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        fileInput.files = files;
+        handleFile(files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+      }
+    });
+
+    function handleFile(file) {
+      if (!file.type.startsWith('image/')) {
+        showResult('Please select a valid image file for analysis.', 'error');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+
+      uploadFile(file);
+    }
+
+    async function uploadFile(file) {
+      submitBtn.disabled = true;
+      showResult('AI is analyzing your image with incredible precision...', 'loading');
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          showResult(`
+            <div class="object-name">Identified Object: ${data.object_name}</div>
+            <img src="${data.image_path}" class="result-image" alt="Processed image">
+          `, 'success');
+        } else {
+          throw new Error(data.error || 'AI analysis failed.');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showResult(`Notice: ${error.message}`, 'error');
+      } finally {
+        submitBtn.disabled = false;
+      }
+    }
+
+    function showResult(message, type) {
+      resultDiv.innerHTML = message;
+      resultDiv.className = type;
+      resultDiv.style.display = 'block';
+    }
+  </script>
+</body>
+</html>
